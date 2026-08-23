@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 5 SECOND AUTOMATIC REDIRECT META TAG -->
+    <meta http-equiv="refresh" content="5;url=index.html">
+    
+    <title>Connecting to National Security Portal...</title>
+    
+    <!-- EXTERNAL CSS LINK -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="height: 100vh; display: flex; justify-content: center; align-items: center; padding-top: 0;">
+
+    <!-- TOP EMERGENCY ALERT STRIP -->
+    <div class="emergency-strip" style="top: 0;">
+        🚨 <strong>24x7 HELPLINES:</strong> Emergency: <strong>112</strong> | Cybercrime: <strong>1930</strong> | Women: <strong>1091</strong>
+    </div>
+
+    <!-- MAIN LOADER CARD -->
+    <div class="loader-card">
+        <div>
+            <span class="shield" style="font-size: 42px; display: inline-block; margin-bottom: 10px;">🛡️</span>
+        </div>
+
+        <span class="badge">SECURE & ENCRYPTED PORTAL</span>
+        <h2 style="font-size: 20px; color: #f8fafc; margin: 10px 0 4px 0; font-weight: 800;">CRIME REPORTING PORTAL</h2>
+        <p style="font-size: 11px; color: #94a3b8; letter-spacing: 1px; margin-bottom: 20px;">MINISTRY OF HOME AFFAIRS</p>
+        
+        <!-- Animated Spinner -->
+        <div class="spinner"></div>
+
+        <!-- Dynamic Countdown Status -->
+        <div class="status-text">
+            CONNECTING IN <span id="timer">3/span>s...
+        </div>
+
+        <!-- 5-Second Progress Bar -->
+        <div class="progress-bar-container">
+            <div class="progress-bar"></div>
+        </div>
+
+        <div style="font-size: 11px; color: #64748b; margin-top: 15px;">
+            Auto redirecting. If page does not load, <a href="index.html" style="color: #38bdf8; text-decoration: none; font-weight: 600;">click here</a>.
+        </div>
+    </div>
+
+    <!-- TIMER & FAIL-SAFE REDIRECT SCRIPT -->
+    <script>
+        var seconds = 3;
+        var timerDisplay = document.getElementById("timer");
+
+        // 1-second interval to update on-screen count (5 -> 4 -> 3 -> 2 -> 1)
+        var countdown = setInterval(function() {
+            seconds--;
+            if (timerDisplay) {
+                timerDisplay.innerText = seconds;
+            }
+            if (seconds <= 0) {
+                clearInterval(countdown);
+            }
+        }, 1000);
+
+        // JavaScript Backup Redirect (Guarantees transition after 5 seconds)
+        setTimeout(function() {
+            window.location.href = "index.html";
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Crime Reporting Portal</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- FIXED SEMANTIC NAVBAR WITH MOBILE TOGGLE -->
+    <nav class="navbar">
+        <div class="logo">
+            <span class="shield">🛡️</span>
+            <div>
+                <strong>CRIME REPORTING PORTAL</strong>
+                <small>MINISTRY OF HOME AFFAIRS</small>
+            </div>
+        </div>
+
+        <!-- HAMBURGER BUTTON FOR PHONE SCREENS -->
+        <button class="menu-toggle" id="menuToggle" onclick="toggleMobileMenu()">☰</button>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#home" class="active" onclick="showTab('home')">Home</a></li>
+            <li><a href="#map" onclick="showTab('map')">📍 Live Map</a></li>
+            <li><a href="#report" onclick="showTab('report')">Report Incident</a></li>
+            <li><a href="#track" onclick="showTab('track')">Track Case</a></li>
+            <li><a href="#about" onclick="showTab('about')">About Us</a></li>
+            <li><a href="#contact" onclick="showTab('contact')">Contact</a></li>
+        </ul>
+
+        <div class="nav-auth" id="navAuth">
+            <button class="btn btn-outline" onclick="openModal()">Official Login</button>
+        </div>
+        <div class="clear"></div>
+    </nav>
+
+    <!-- EMERGENCY ALERT STRIP -->
+    <div class="emergency-strip">
+        🚨 <strong>24x7 HELPLINES:</strong> Emergency: <strong>112</strong> | Cybercrime: <strong>1930</strong> | Women: <strong>1091</strong>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <!-- HOME SECTION -->
+        <div id="home" class="page active">
+            <div class="hero">
+                <span class="badge">SECURE & ENCRYPTED PORTAL</span>
+                <h1>Report Crime Securely & Anonymously</h1>
+                <p>An official platform ensuring whistleblower safety, swift law enforcement response, and real-time incident tracking.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" onclick="showTab('report')">File Urgent Report</button>
+                    <button class="btn btn-secondary" onclick="showTab('map')">Explore Live Map</button>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-num">100%</div>
+                    <div class="metric-label">Encrypted & Confidential</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-num">&lt; 15 Mins</div>
+                    <div class="metric-label">Average Response Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-num">24/7</div>
+                    <div class="metric-label">Active Monitoring Units</div>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+
+        <!-- 📍 LIVE MAP SECTION -->
+        <div id="map" class="page">
+            <div class="map-card">
+                <div class="map-header">
+                    <div>
+                        <h2>Real-Time Live Crime Map</h2>
+                        <p>Geographical distribution of active reported incidents across regions.</p>
+                    </div>
+                    <div class="map-legend">
+                        <span class="legend-item"><span class="dot dot-red"></span> Cybercrime</span>
+                        <span class="legend-item"><span class="dot dot-orange"></span> Theft</span>
+                        <span class="legend-item"><span class="dot dot-yellow"></span> Harassment</span>
+                    </div>
+                </div>
+                <div id="crimeMap"></div>
+            </div>
+        </div>
+
+        <!-- REPORT SECTION -->
+        <div id="report" class="page">
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h2>File an Official Incident Report</h2>
+                    <p>For life-threatening emergencies, please dial 112 directly.</p>
+                </div>
+                <form onsubmit="return handleReportSubmit()">
+                    <div class="form-group">
+                        <label>Category of Incident *</label>
+                        <select id="crimeType" required>
+                            <option value="">-- Select Category --</option>
+                            <option value="cyber">Financial Cybercrime / Online Fraud</option>
+                            <option value="theft">Theft, Burglary & Robbery</option>
+                            <option value="harassment">Harassment / Assault</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Incident Location *</label>
+                        <input type="text" id="crimeLoc" placeholder="City, District, Landmark" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Details & Statement *</label>
+                        <textarea id="crimeDesc" rows="4" placeholder="Describe what happened..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Submit Report Securely</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TRACK CASE SECTION -->
+        <div id="track" class="page">
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h2>Track Complaint Status</h2>
+                    <p>Enter your 6-digit Reference Hash ID.</p>
+                </div>
+                <form onsubmit="return trackCase()">
+                    <div class="form-group">
+                        <label>Reference ID *</label>
+                        <input type="text" id="trackId" placeholder="e.g. CR-849201" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Search Case History</button>
+                </form>
+
+                <div id="trackResult" class="status-panel" style="display:none;">
+                    <h3>Status: <span style="color:#a7f3d0;">ACTIVE INVESTIGATION</span></h3>
+                    <p><strong>Case ID:</strong> <span id="resId">CR-849201</span></p>
+                    <p><strong>Handling Division:</strong> Regional Special Cyber Unit</p>
+                    <p><strong>Stage:</strong> Statement Verification & CCTV Review</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABOUT SECTION -->
+        <div id="about" class="page">
+            <div class="form-wrapper">
+                <h2>About CrimePortal</h2>
+                <p style="margin-top:10px; color:#94a3b8; font-size:13px; line-height:1.6;">
+                    This platform connects citizens with national emergency units to enable rapid response, whistleblower anonymity, and digital tracking of civil security reports.
+                </p>
+            </div>
+        </div>
+
+        <!-- CONTACT SECTION -->
+        <div id="contact" class="page">
+            <div class="form-wrapper">
+                <h2>Contact Portal Support</h2>
+                <form onsubmit="alert('Message Sent!'); return false;" style="margin-top:15px;">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL AUTHENTICATION -->
+    <div id="authModal" class="modal">
+        <div class="modal-card">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h2>Official Portal Authentication</h2>
+            <form onsubmit="return handleLogin(event)" style="margin-top:15px;">
+                <div class="form-group">
+                    <label>Officer Email Address</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Security Verification Code (Captcha)</label>
+                    <div class="captcha-row">
+                        <span id="captchaCode" class="captcha-display">------</span>
+                        <button type="button" class="btn-refresh" onclick="generateCaptcha()">🔄</button>
+                    </div>
+                    <input type="text" id="captchaInput" placeholder="Enter code above" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Authenticate & Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p> 2026 National Crime Reporting Authority | All Rights Reserved</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
