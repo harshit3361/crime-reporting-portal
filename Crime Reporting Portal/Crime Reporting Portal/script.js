@@ -6,9 +6,8 @@ var isMapInitialized = false;
 var mapInstance = null;
 
 /* =========================================================
-   2. ARRAYS & OBJECTS (Data Structures)
+   2. ARRAYS & OBJECTS
    ========================================================= */
-// Object Array containing incidents for Live Map
 var crimeIncidents = [
     {
         category: "Financial Cyber Fraud",
@@ -48,7 +47,6 @@ var crimeIncidents = [
     }
 ];
 
-// Array storing dynamic platform statistics
 var metricData = [
     { value: "100%", label: "Encrypted & Confidential" },
     { value: "< 15 Mins", label: "Average Response Time" },
@@ -56,17 +54,40 @@ var metricData = [
 ];
 
 /* =========================================================
-   3. FUNCTIONS & DOM MANIPULATION
+   3. AUTO 3-SECOND LOADER (ZERO LAG / NO PAUSE)
+   ========================================================= */
+function initLoader() {
+    var secondsLeft = 3;
+    var timerElement = document.getElementById("timer");
+    var loaderOverlay = document.getElementById("loaderOverlay");
+
+    var timerInterval = setInterval(function() {
+        secondsLeft--;
+        if (timerElement && secondsLeft > 0) {
+            timerElement.innerText = secondsLeft;
+        }
+    }, 1000);
+
+    // Exact 3000ms (3 seconds) par loader screen direct remove ho jayegi
+    setTimeout(function() {
+        clearInterval(timerInterval);
+        if (loaderOverlay) {
+            loaderOverlay.remove();
+        }
+    }, 3000);
+}
+
+/* =========================================================
+   4. FUNCTIONS (DOM, LOOPS & EVENTS)
    ========================================================= */
 
-// Function to dynamically render metrics using Loops & DOM
+// Render Metrics dynamically using Loops & DOM
 function renderMetrics() {
     var metricsContainer = document.querySelector(".metrics-grid");
     if (!metricsContainer) return;
 
-    metricsContainer.innerHTML = ""; // Clear existing
+    metricsContainer.innerHTML = "";
 
-    // Loop through Array of Objects
     for (var i = 0; i < metricData.length; i++) {
         var card = document.createElement("div");
         card.className = "metric-card";
@@ -89,22 +110,18 @@ function renderMetrics() {
     metricsContainer.appendChild(clearDiv);
 }
 
-// Function to switch tabs using DOM selection and Loops
+// Tab Switching
 function showTab(targetTabId) {
     var allPages = document.querySelectorAll(".page");
-    
-    // Loop to hide all pages
     for (var i = 0; i < allPages.length; i++) {
         allPages[i].classList.remove("active");
     }
 
-    // Activate the targeted page
     var targetPage = document.getElementById(targetTabId);
     if (targetPage) {
         targetPage.classList.add("active");
     }
 
-    // Update Navbar link state
     var allNavLinks = document.querySelectorAll(".nav-links a");
     for (var j = 0; j < allNavLinks.length; j++) {
         allNavLinks[j].classList.remove("active");
@@ -115,13 +132,12 @@ function showTab(targetTabId) {
         currentActiveLink.classList.add("active");
     }
 
-    // Initialize Map if map tab is clicked
     if (targetTabId === "map" && !isMapInitialized) {
         setTimeout(initCrimeMap, 150);
     }
 }
 
-// Function to Initialize Map and iterate through pins
+// Leaflet Map Initialization
 function initCrimeMap() {
     mapInstance = L.map("crimeMap").setView([28.6139, 77.2090], 11);
 
@@ -130,7 +146,6 @@ function initCrimeMap() {
         maxZoom: 18
     }).addTo(mapInstance);
 
-    // Loop through crimeIncidents array to create custom animated pins
     crimeIncidents.forEach(function(incident) {
         var pinIcon = L.divIcon({
             className: "blinking-pin " + incident.colorClass,
@@ -151,7 +166,6 @@ function initCrimeMap() {
 
         marker.bindPopup(popupHTML);
 
-        // Event Handling: Hover to show details
         marker.on("mouseover", function() {
             this.openPopup();
         });
@@ -160,7 +174,7 @@ function initCrimeMap() {
     isMapInitialized = true;
 }
 
-// Modal open/close functions
+// Modal controls
 function openModal() {
     document.getElementById("authModal").style.display = "block";
     generateCaptcha();
@@ -170,12 +184,12 @@ function closeModal() {
     document.getElementById("authModal").style.display = "none";
 }
 
-// Function with Loop to generate 5-character Captcha
+// Dynamic Captcha generator
 function generateCaptcha() {
     var characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     var captchaResult = "";
 
-    for (var i = 0; i < 3 ; i++) {
+    for (var i = 0; i < 3; i++) {
         var randomIndex = Math.floor(Math.random() * characters.length);
         captchaResult += characters.charAt(randomIndex);
     }
@@ -185,7 +199,7 @@ function generateCaptcha() {
     document.getElementById("captchaInput").value = "";
 }
 
-// Authentication Event Handler
+// Form Handlers
 function handleLogin(event) {
     event.preventDefault();
     var userInput = document.getElementById("captchaInput").value;
@@ -196,7 +210,6 @@ function handleLogin(event) {
         return false;
     }
 
-    // DOM Manipulation to update nav UI
     var authContainer = document.getElementById("navAuth");
     authContainer.innerHTML = `
         <span style="color:#f8fafc; font-size:12px; margin-right:10px;">Officer Authenticated</span>
@@ -208,7 +221,6 @@ function handleLogin(event) {
     return false;
 }
 
-// Incident Report Handler
 function handleReportSubmit() {
     var generatedHash = "CR-" + Math.floor(100000 + Math.random() * 900000);
     alert("INCIDENT REGISTERED SECURELY\n\nReference ID: " + generatedHash + "\nStatus: Forwarded to Division");
@@ -218,7 +230,6 @@ function handleReportSubmit() {
     return false;
 }
 
-// Track Case Handler
 function trackCase() {
     var searchId = document.getElementById("trackId").value;
     document.getElementById("resId").innerText = searchId;
@@ -227,10 +238,10 @@ function trackCase() {
 }
 
 /* =========================================================
-   4. EVENT LISTENERS (Page Initialization)
+   5. PAGE START INITIALIZATION
    ========================================================= */
 window.addEventListener("DOMContentLoaded", function() {
+    initLoader(); // Starts loading screen automatically on page open
     renderMetrics();
     generateCaptcha();
 });
-
