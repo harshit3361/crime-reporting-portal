@@ -4,12 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>National Crime Reporting Portal</title>
+    <!-- Leaflet CSS for Live Interactive Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- FIXED SEMANTIC NAVBAR WITH MOBILE TOGGLE -->
+    <!-- 1. FULLSCREEN SECURITY LOADER OVERLAY (AUTO RUNS ON LOAD) -->
+    <div id="loaderOverlay">
+        <div class="emergency-strip" style="position: absolute; top: 0;">
+            🛡️ OFFICIAL GOVERNMENT ACCESS PORTAL • SECURE SSL ENCRYPTED
+        </div>
+
+        <div class="loader-card">
+            <div>
+                <span class="shield" style="font-size: 42px; display: inline-block; margin-bottom: 10px;">🛡️</span>
+            </div>
+
+            <span class="badge">SECURE & ENCRYPTED PORTAL</span>
+            <h2 style="font-size: 20px; color: #f8fafc; margin: 10px 0 4px 0; font-weight: 800;">CRIME REPORTING PORTAL</h2>
+            <p style="font-size: 11px; color: #94a3b8; letter-spacing: 1px; margin-bottom: 20px;">MINISTRY OF HOME AFFAIRS</p>
+            
+            <!-- Animated Spinner -->
+            <div class="spinner"></div>
+
+            <!-- Dynamic Countdown -->
+            <div class="status-text">
+                CONNECTING IN <span id="timer">3</span>s...
+            </div>
+
+            <!-- 3-Second Progress Bar -->
+            <div class="progress-bar-container">
+                <div class="progress-bar"></div>
+            </div>
+
+            <div style="font-size: 11px; color: #64748b; margin-top: 15px;">
+                Establishing secure end-to-end handshake...
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN WEBSITE CONTENT -->
+    
+    <!-- FIXED NAVBAR -->
     <nav class="navbar">
         <div class="logo">
             <span class="shield">🛡️</span>
@@ -18,11 +55,7 @@
                 <small>MINISTRY OF HOME AFFAIRS</small>
             </div>
         </div>
-
-        <!-- HAMBURGER BUTTON FOR PHONE SCREENS -->
-        <button class="menu-toggle" id="menuToggle" onclick="toggleMobileMenu()">☰</button>
-
-        <ul class="nav-links" id="navLinks">
+        <ul class="nav-links">
             <li><a href="#home" class="active" onclick="showTab('home')">Home</a></li>
             <li><a href="#map" onclick="showTab('map')">📍 Live Map</a></li>
             <li><a href="#report" onclick="showTab('report')">Report Incident</a></li>
@@ -30,7 +63,6 @@
             <li><a href="#about" onclick="showTab('about')">About Us</a></li>
             <li><a href="#contact" onclick="showTab('contact')">Contact</a></li>
         </ul>
-
         <div class="nav-auth" id="navAuth">
             <button class="btn btn-outline" onclick="openModal()">Official Login</button>
         </div>
@@ -58,19 +90,7 @@
             </div>
 
             <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-num">100%</div>
-                    <div class="metric-label">Encrypted & Confidential</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-num">&lt; 15 Mins</div>
-                    <div class="metric-label">Average Response Time</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-num">24/7</div>
-                    <div class="metric-label">Active Monitoring Units</div>
-                </div>
-                <div class="clear"></div>
+                <!-- Dynamically Rendered via JavaScript -->
             </div>
         </div>
 
@@ -205,9 +225,10 @@
 
     <!-- FOOTER -->
     <footer class="footer">
-        <p> 2026 National Crime Reporting Authority | All Rights Reserved</p>
+        <p>&copy; 2026 National Crime Reporting Authority | All Rights Reserved</p>
     </footer>
 
+    <!-- Leaflet JS Map Engine -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
