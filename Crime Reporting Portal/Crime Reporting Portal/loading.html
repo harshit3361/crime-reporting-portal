@@ -3,70 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- 3 SECOND AUTOMATIC REDIRECT META TAG -->
-    <meta http-equiv="refresh" content="3;url=index.html">
-    
+    <meta name="color-scheme" content="dark">
+
+    <!-- No-JavaScript fallback: redirects after 5 seconds -->
+    <noscript><meta http-equiv="refresh" content="5;url=index.html"></noscript>
+
     <title>Connecting to National Security Portal...</title>
-    
-    <!-- EXTERNAL CSS LINK -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body style="height: 100vh; display: flex; justify-content: center; align-items: center; padding-top: 0;">
+<body class="loader-page">
 
-    <!-- TOP EMERGENCY ALERT STRIP -->
-    <div class="emergency-strip" style="top: 0;">
+    <div class="emergency-strip">
         🚨 <strong>24x7 HELPLINES:</strong> Emergency: <strong>112</strong> | Cybercrime: <strong>1930</strong> | Women: <strong>1091</strong>
     </div>
 
-    <!-- MAIN LOADER CARD -->
     <div class="loader-card">
-        <div>
-            <span class="shield" style="font-size: 42px; display: inline-block; margin-bottom: 10px;">🛡️</span>
+        <div class="loader-shield">🛡️</div>
+        <span class="badge">SECURE &amp; ENCRYPTED PORTAL</span>
+        <h1 class="loader-title">CRIME REPORTING PORTAL</h1>
+        <p class="loader-sub">MINISTRY OF HOME AFFAIRS</p>
+
+        <div class="spinner" aria-hidden="true"></div>
+
+        <div class="status-text" role="status">
+            CONNECTING IN <span id="timer">5</span>s...
         </div>
 
-        <span class="badge">SECURE & ENCRYPTED PORTAL</span>
-        <h2 style="font-size: 20px; color: #f8fafc; margin: 10px 0 4px 0; font-weight: 800;">CRIME REPORTING PORTAL</h2>
-        <p style="font-size: 11px; color: #94a3b8; letter-spacing: 1px; margin-bottom: 20px;">MINISTRY OF HOME AFFAIRS</p>
-        
-        <!-- Animated Spinner -->
-        <div class="spinner"></div>
-
-        <!-- Dynamic Countdown Status -->
-        <div class="status-text">
-            CONNECTING IN <span id="timer">3</span>s...
-        </div>
-
-        <!-- 5-Second Progress Bar -->
-        <div class="progress-bar-container">
+        <div class="progress-bar-container" aria-hidden="true">
             <div class="progress-bar"></div>
         </div>
 
-        <div style="font-size: 11px; color: #64748b; margin-top: 15px;">
-            Auto redirecting. If page does not load, <a href="index.html" style="color: #38bdf8; text-decoration: none; font-weight: 600;">click here</a>.
-        </div>
+        <ul class="loader-steps" id="loaderSteps">
+            <li id="step1">Establishing secure channel</li>
+            <li id="step2">Verifying encryption certificates</li>
+            <li id="step3">Loading citizen services</li>
+        </ul>
+
+        <p class="loader-note">
+            Redirecting automatically. If nothing happens,
+            <a href="index.html">click here to enter the portal</a>.
+        </p>
     </div>
 
-    <!-- TIMER & FAIL-SAFE REDIRECT SCRIPT -->
     <script>
-        var seconds = 3;
+        // Promise-based loading sequence
+        var TOTAL_SECONDS = 5;
         var timerDisplay = document.getElementById("timer");
 
-        // 1-second interval to update on-screen count (5 -> 4 -> 3 -> 2 -> 1)
-        var countdown = setInterval(function() {
-            seconds--;
-            if (timerDisplay) {
-                timerDisplay.innerText = seconds;
-            }
-            if (seconds <= 0) {
-                clearInterval(countdown);
-            }
-        }, 1000);
+        function wait(ms) {
+            return new Promise(function (resolve) { setTimeout(resolve, ms); });
+        }
 
-        // JavaScript Backup Redirect (Guarantees transition after 5 seconds)
-        setTimeout(function() {
+        function markStep(id) {
+            var el = document.getElementById(id);
+            if (el) { el.classList.add("done"); }
+            return el;
+        }
+
+        // Visible countdown: 5 -> 4 -> 3 -> 2 -> 1 -> 0 (resolves when finished)
+        function countdown(seconds) {
+            return new Promise(function (resolve) {
+                var left = seconds;
+                var id = setInterval(function () {
+                    left--;
+                    if (timerDisplay && left >= 0) { timerDisplay.textContent = left; }
+                    if (left <= 0) { clearInterval(id); resolve(); }
+                }, 1000);
+            });
+        }
+
+        // Steps run one after another (chained Promises)
+        var steps = wait(1200)
+            .then(function () { markStep("step1"); return wait(1600); })
+            .then(function () { markStep("step2"); return wait(1600); })
+            .then(function () { markStep("step3"); });
+
+        // Redirect once BOTH the steps and the countdown are finished
+        Promise.all([steps, countdown(TOTAL_SECONDS)]).then(function () {
             window.location.href = "index.html";
-        }, 5000);
+        });
     </script>
 </body>
 </html>
