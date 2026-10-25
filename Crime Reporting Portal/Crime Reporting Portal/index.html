@@ -3,232 +3,620 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#060914">
+    <meta name="description" content="National Crime Reporting Portal - report incidents securely, track cases and view the live crime map.">
     <title>National Crime Reporting Portal</title>
-    <!-- Leaflet CSS for Live Interactive Map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Loading screen: flag the page as "loading" before first paint; hidden again if JavaScript is off -->
+    <script>document.documentElement.classList.add("pc-loading");</script>
+    <noscript><style>#pcLoader { display: none !important; }</style></noscript>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 1. FULLSCREEN SECURITY LOADER OVERLAY (AUTO RUNS ON LOAD) -->
-    <div id="loaderOverlay">
-        <div class="emergency-strip" style="position: absolute; top: 0;">
-            🛡️ OFFICIAL GOVERNMENT ACCESS PORTAL • SECURE SSL ENCRYPTED
+    <!-- ================= LOADING SCREEN (shown for 3 seconds on every open / refresh) ================= -->
+    <div id="pcLoader" role="status" aria-live="polite" aria-label="Loading the Crime Reporting Portal">
+        <div class="pc-stage">
+            <div class="pc-orb" aria-hidden="true">
+                <span class="pc-ring pc-ring-outer"></span>
+                <span class="pc-ring pc-ring-spin"></span>
+                <span class="pc-core">🛡️</span>
+            </div>
+            <div class="pc-title">CRIME REPORTING PORTAL</div>
+            <p class="pc-sub">MINISTRY OF HOME AFFAIRS</p>
+            <p class="pc-msg">Preparing your secure experience<span class="pc-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></p>
+            <div class="pc-bar" aria-hidden="true"><span class="pc-bar-fill"></span></div>
+            <div class="pc-percent" id="pcPercent" aria-hidden="true">0%</div>
         </div>
-
-        <div class="loader-card">
-            <div>
-                <span class="shield" style="font-size: 42px; display: inline-block; margin-bottom: 10px;">🛡️</span>
-            </div>
-
-            <span class="badge">SECURE & ENCRYPTED PORTAL</span>
-            <h2 style="font-size: 20px; color: #f8fafc; margin: 10px 0 4px 0; font-weight: 800;">CRIME REPORTING PORTAL</h2>
-            <p style="font-size: 11px; color: #94a3b8; letter-spacing: 1px; margin-bottom: 20px;">MINISTRY OF HOME AFFAIRS</p>
-            
-            <!-- Animated Spinner -->
-            <div class="spinner"></div>
-
-            <!-- Dynamic Countdown -->
-            <div class="status-text">
-                CONNECTING IN <span id="timer">3</span>s...
-            </div>
-
-            <!-- 3-Second Progress Bar -->
-            <div class="progress-bar-container">
-                <div class="progress-bar"></div>
-            </div>
-
-            <div style="font-size: 11px; color: #64748b; margin-top: 15px;">
-                Establishing secure end-to-end handshake...
-            </div>
-        </div>
+        <p class="pc-foot">🚨 In an emergency, dial <strong>112</strong></p>
     </div>
+    <script>
+        /* Loading screen controller: self-contained, so it still works if script.js has an error.
+           After 3000 ms the overlay fades out and the website is revealed. */
+        (function () {
+            "use strict";
+            var LOAD_MS = 3000;   // how long the loading screen stays fully visible
+            var FADE_MS = 700;    // must match the opacity transition in style.css
+            var root = document.documentElement;
+            var loader = document.getElementById("pcLoader");
+            var finished = false;
 
-    <!-- 2. MAIN WEBSITE CONTENT -->
-    
-    <!-- FIXED NAVBAR -->
+            function removeLoader() {
+                if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+            }
+
+            function finish() {
+                if (finished) return;
+                finished = true;
+                try {
+                    root.classList.remove("pc-loading");          // reveal + unlock the website underneath
+                    if (loader) {
+                        loader.setAttribute("aria-hidden", "true");
+                        loader.classList.add("pc-hide");          // smooth fade-out
+                        setTimeout(removeLoader, FADE_MS + 60);
+                    }
+                } catch (e) {
+                    root.classList.remove("pc-loading");
+                    removeLoader();
+                }
+            }
+
+            setTimeout(finish, LOAD_MS);
+
+            // Optional percentage text (purely cosmetic; ignored if anything goes wrong)
+            try {
+                var pct = document.getElementById("pcPercent");
+                var start = Date.now();
+                (function tick() {
+                    if (finished || !pct) return;
+                    var p = Math.min(100, Math.round((Date.now() - start) / LOAD_MS * 100));
+                    pct.textContent = p + "%";
+                    if (p < 100) {
+                        if (window.requestAnimationFrame) window.requestAnimationFrame(tick);
+                        else setTimeout(tick, 60);
+                    }
+                })();
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- ================= NAVBAR ================= -->
     <nav class="navbar">
-        <div class="logo">
+        <a class="logo" href="#home">
             <span class="shield">🛡️</span>
-            <div>
+            <span>
                 <strong>CRIME REPORTING PORTAL</strong>
                 <small>MINISTRY OF HOME AFFAIRS</small>
-            </div>
-        </div>
-        <ul class="nav-links">
-            <li><a href="#home" class="active" onclick="showTab('home')">Home</a></li>
-            <li><a href="#map" onclick="showTab('map')">📍 Live Map</a></li>
-            <li><a href="#report" onclick="showTab('report')">Report Incident</a></li>
-            <li><a href="#track" onclick="showTab('track')">Track Case</a></li>
-            <li><a href="#about" onclick="showTab('about')">About Us</a></li>
-            <li><a href="#contact" onclick="showTab('contact')">Contact</a></li>
+            </span>
+        </a>
+
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks" onclick="toggleMobileMenu()">☰</button>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#home" data-tab="home" class="active">Home</a></li>
+            <li><a href="#map" data-tab="map">📍 Live Map</a></li>
+            <li><a href="#report" data-tab="report">Report Incident</a></li>
+            <li><a href="#track" data-tab="track">Track Case</a></li>
+            <li><a href="#safety" data-tab="safety">Safety Hub</a></li>
+            <li><a href="#about" data-tab="about">About Us</a></li>
+            <li><a href="#contact" data-tab="contact">Contact</a></li>
+            <li id="navDashLi" style="display:none;"><a href="#dashboard" data-tab="dashboard">📊 Officer Dashboard</a></li>
         </ul>
+
         <div class="nav-auth" id="navAuth">
-            <button class="btn btn-outline" onclick="openModal()">Official Login</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openModal()">Official Login</button>
         </div>
-        <div class="clear"></div>
     </nav>
 
-    <!-- EMERGENCY ALERT STRIP -->
     <div class="emergency-strip">
-        🚨 <strong>24x7 HELPLINES:</strong> Emergency: <strong>112</strong> | Cybercrime: <strong>1930</strong> | Women: <strong>1091</strong>
+        🚨 <strong>24x7 HELPLINES:</strong>
+        Emergency: <a href="tel:112"><strong>112</strong></a> |
+        Cybercrime: <a href="tel:1930"><strong>1930</strong></a> |
+        Women: <a href="tel:1091"><strong>1091</strong></a>
     </div>
 
-    <!-- MAIN CONTAINER -->
-    <div class="container">
+    <main class="container" id="main">
 
-        <!-- HOME SECTION -->
-        <div id="home" class="page active">
+        <!-- ================= HOME ================= -->
+        <section id="page-home" class="page active">
             <div class="hero">
-                <span class="badge">SECURE & ENCRYPTED PORTAL</span>
-                <h1>Report Crime Securely & Anonymously</h1>
-                <p>An official platform ensuring whistleblower safety, swift law enforcement response, and real-time incident tracking.</p>
-                <div class="hero-actions">
-                    <button class="btn btn-primary" onclick="showTab('report')">File Urgent Report</button>
-                    <button class="btn btn-secondary" onclick="showTab('map')">Explore Live Map</button>
+                <div class="hero-grid">
+                    <div class="hero-text">
+                        <span class="badge">🔒 SECURE &amp; ENCRYPTED PORTAL</span>
+                        <h1>Report Crime <span class="gradient-text">Securely &amp; Anonymously</span></h1>
+                        <p>An official platform ensuring whistleblower safety, swift law enforcement response, and real-time incident tracking &mdash; built for every citizen.</p>
+                        <div class="hero-actions">
+                            <a class="btn btn-primary" href="#report">File Urgent Report</a>
+                            <a class="btn btn-secondary" href="#map">Explore Live Map</a>
+                        </div>
+                        <div class="hero-chips">
+                            <span class="chip-static">🔐 Encrypted</span>
+                            <span class="chip-static">🕵️ Anonymous option</span>
+                            <span class="chip-static">⚡ Fast response</span>
+                        </div>
+                    </div>
+
+                    <aside class="live-card" aria-label="Latest incidents">
+                        <div class="live-head"><span class="live-dot"></span> Live Incident Feed</div>
+                        <ul class="feed" id="liveFeed"></ul>
+                        <a class="feed-link" href="#map">View all on map →</a>
+                    </aside>
                 </div>
             </div>
 
-            <div class="metrics-grid">
-                <!-- Dynamically Rendered via JavaScript -->
-            </div>
-        </div>
+            <div class="metrics-grid" id="metricsGrid"></div>
 
-        <!-- 📍 LIVE MAP SECTION -->
-        <div id="map" class="page">
+            <div class="section reveal">
+                <div class="section-head">
+                    <span class="eyebrow">SERVICES</span>
+                    <h2>What would you like to report?</h2>
+                    <p>Choose a category and we will take you straight to a pre-filled report form.</p>
+                </div>
+                <div class="card-grid cols-4">
+                    <button type="button" class="service-card" onclick="startReport('cyber')">
+                        <span class="icon-box">💳</span>
+                        <h3>Cybercrime &amp; Fraud</h3>
+                        <p>UPI scams, phishing, identity theft, fake loan apps and online banking fraud.</p>
+                        <span class="card-link">Report now →</span>
+                    </button>
+                    <button type="button" class="service-card" onclick="startReport('theft')">
+                        <span class="icon-box">🔓</span>
+                        <h3>Theft &amp; Robbery</h3>
+                        <p>Burglary, vehicle theft, snatching, shoplifting and armed robbery incidents.</p>
+                        <span class="card-link">Report now →</span>
+                    </button>
+                    <button type="button" class="service-card" onclick="startReport('harassment')">
+                        <span class="icon-box">🚫</span>
+                        <h3>Harassment &amp; Assault</h3>
+                        <p>Stalking, physical assault, workplace or street harassment and threats.</p>
+                        <span class="card-link">Report now →</span>
+                    </button>
+                    <a class="service-card service-danger" href="tel:112">
+                        <span class="icon-box">🚨</span>
+                        <h3>Life-threatening?</h3>
+                        <p>If someone is in immediate danger do not wait &mdash; call the emergency number now.</p>
+                        <span class="card-link">Call 112 →</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="section reveal">
+                <div class="section-head">
+                    <span class="eyebrow">PROCESS</span>
+                    <h2>How the portal works</h2>
+                    <p>From complaint to resolution in four transparent steps.</p>
+                </div>
+                <div class="card-grid cols-4 steps">
+                    <div class="step-card"><span class="step-num">1</span><h3>File a report</h3><p>Fill in the secure form with the incident category, location and statement.</p></div>
+                    <div class="step-card"><span class="step-num">2</span><h3>Get a Reference ID</h3><p>A unique CR-ID is generated instantly so you can follow your case.</p></div>
+                    <div class="step-card"><span class="step-num">3</span><h3>Officer review</h3><p>The case is assigned to the right division and investigated.</p></div>
+                    <div class="step-card"><span class="step-num">4</span><h3>Track &amp; resolve</h3><p>Check live status updates until the case is marked resolved.</p></div>
+                </div>
+            </div>
+
+            <div class="section reveal">
+                <div class="section-head">
+                    <span class="eyebrow">FEATURES</span>
+                    <h2>Built for safety and trust</h2>
+                </div>
+                <div class="card-grid cols-3">
+                    <div class="feature-card"><span class="icon-box">🕵️</span><h3>Anonymous Reporting</h3><p>Hide your name and phone number completely. Only the incident details are shared with officers.</p></div>
+                    <div class="feature-card"><span class="icon-box">🗺️</span><h3>Geo-mapped Incidents</h3><p>Interactive live map with filters shows where incidents are happening across the region.</p></div>
+                    <div class="feature-card"><span class="icon-box">📡</span><h3>Real-time Tracking</h3><p>Follow your complaint through every stage with a clear timeline and history.</p></div>
+                    <div class="feature-card"><span class="icon-box">👮</span><h3>Officer Dashboard</h3><p>Verified officers can log in to review reports and update case status.</p></div>
+                    <div class="feature-card"><span class="icon-box">📚</span><h3>Safety Hub</h3><p>Practical tips, a safety checklist and a scam risk checker to protect yourself.</p></div>
+                    <div class="feature-card"><span class="icon-box">📱</span><h3>Works on Every Device</h3><p>Fully responsive design for phones, tablets and desktop computers.</p></div>
+                </div>
+            </div>
+
+            <div class="section reveal">
+                <div class="section-head">
+                    <span class="eyebrow">HELP</span>
+                    <h2>Frequently asked questions</h2>
+                </div>
+                <div class="faq" id="faqList"></div>
+            </div>
+
+            <div class="cta-band reveal">
+                <div>
+                    <h2>Saw something? Say something.</h2>
+                    <p>Your report can protect your neighbours and help police act faster.</p>
+                </div>
+                <a class="btn btn-primary" href="#report">Report an Incident</a>
+            </div>
+        </section>
+
+        <!-- ================= LIVE MAP ================= -->
+        <section id="page-map" class="page">
+            <div class="page-title">
+                <span class="eyebrow">LIVE MAP</span>
+                <h2>Real-Time Live Crime Map</h2>
+                <p>Incidents refresh automatically every 30 seconds. Click a pin for details, or use My location to centre the map on you.</p>
+            </div>
+
             <div class="map-card">
-                <div class="map-header">
-                    <div>
-                        <h2>Real-Time Live Crime Map</h2>
-                        <p>Geographical distribution of active reported incidents across regions.</p>
+                <div class="map-toolbar">
+                    <div class="chips" id="mapFilters" role="group" aria-label="Filter incidents by type">
+                        <button type="button" class="chip active" data-filter="all" onclick="setMapFilter('all')">All</button>
+                        <button type="button" class="chip" data-filter="cyber" onclick="setMapFilter('cyber')"><span class="dot dot-red"></span> Cybercrime</button>
+                        <button type="button" class="chip" data-filter="theft" onclick="setMapFilter('theft')"><span class="dot dot-orange"></span> Theft</button>
+                        <button type="button" class="chip" data-filter="harassment" onclick="setMapFilter('harassment')"><span class="dot dot-yellow"></span> Harassment</button>
                     </div>
-                    <div class="map-legend">
-                        <span class="legend-item"><span class="dot dot-red"></span> Cybercrime</span>
-                        <span class="legend-item"><span class="dot dot-orange"></span> Theft</span>
-                        <span class="legend-item"><span class="dot dot-yellow"></span> Harassment</span>
+                    <input type="search" id="mapSearch" class="input-inline" placeholder="🔍 Search incidents, or press Enter to find a place" aria-label="Search incidents or a place" oninput="renderMapView(true)">
+                </div>
+
+                <div class="live-bar">
+                    <span id="liveStatus" class="live-status live-loading" role="status">Connecting...</span>
+                    <div class="live-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" id="refreshBtn" onclick="refreshIncidents(true)">🔄 Refresh</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="locateBtn" onclick="locateMe()">📍 My location</button>
                     </div>
                 </div>
-                <div id="crimeMap"></div>
-            </div>
-        </div>
 
-        <!-- REPORT SECTION -->
-        <div id="report" class="page">
+                <div class="map-layout">
+                    <div id="crimeMap" aria-label="Interactive crime map"></div>
+                    <div class="map-side">
+                        <div class="map-count" id="mapCount"></div>
+                        <ul class="incident-list" id="mapList"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= REPORT ================= -->
+        <section id="page-report" class="page">
             <div class="form-wrapper">
                 <div class="form-header">
+                    <span class="eyebrow">NEW COMPLAINT</span>
                     <h2>File an Official Incident Report</h2>
-                    <p>For life-threatening emergencies, please dial 112 directly.</p>
+                    <p>For life-threatening emergencies, please dial <a href="tel:112">112</a> directly.</p>
                 </div>
-                <form onsubmit="return handleReportSubmit()">
+
+                <div id="reportSuccess" class="success-panel" style="display:none;" role="status">
+                    <div class="success-icon">✅</div>
+                    <h3>Report registered securely</h3>
+                    <p>Save your reference ID to track this case:</p>
+                    <div class="ref-box"><span id="successId">CR-000000</span></div>
+                    <div class="success-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyRefId()">📋 Copy ID</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="trackSubmitted()">Track this case</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="newReport()">File another</button>
+                    </div>
+                </div>
+
+                <form id="reportForm" novalidate onsubmit="return handleReportSubmit(event)">
                     <div class="form-group">
-                        <label>Category of Incident *</label>
-                        <select id="crimeType" required>
+                        <label for="crimeType">Category of Incident *</label>
+                        <select id="crimeType">
                             <option value="">-- Select Category --</option>
                             <option value="cyber">Financial Cybercrime / Online Fraud</option>
-                            <option value="theft">Theft, Burglary & Robbery</option>
+                            <option value="theft">Theft, Burglary &amp; Robbery</option>
                             <option value="harassment">Harassment / Assault</option>
                         </select>
+                        <small class="field-error" id="err-crimeType"></small>
                     </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="crimeLoc">Incident Location *</label>
+                            <input type="text" id="crimeLoc" placeholder="City, District, Landmark" autocomplete="off">
+                            <small class="field-error" id="err-crimeLoc"></small>
+                        </div>
+                        <div class="form-group">
+                            <label for="crimeDate">Date &amp; Time of Incident *</label>
+                            <input type="datetime-local" id="crimeDate">
+                            <small class="field-error" id="err-crimeDate"></small>
+                        </div>
+                    </div>
+
                     <div class="form-group">
-                        <label>Incident Location *</label>
-                        <input type="text" id="crimeLoc" placeholder="City, District, Landmark" required>
+                        <label>Severity *</label>
+                        <div class="severity-row" role="radiogroup" aria-label="Severity">
+                            <label class="sev sev-low"><input type="radio" name="severity" value="Low"><span>Low</span></label>
+                            <label class="sev sev-med"><input type="radio" name="severity" value="Medium"><span>Medium</span></label>
+                            <label class="sev sev-high"><input type="radio" name="severity" value="High"><span>High</span></label>
+                        </div>
+                        <small class="field-error" id="err-severity"></small>
                     </div>
+
                     <div class="form-group">
-                        <label>Details & Statement *</label>
-                        <textarea id="crimeDesc" rows="4" placeholder="Describe what happened..." required></textarea>
+                        <label for="crimeDesc">Details &amp; Statement *</label>
+                        <textarea id="crimeDesc" rows="5" maxlength="1000" placeholder="Describe what happened, who was involved, and any identifying details..."></textarea>
+                        <div class="field-meta"><small class="field-error" id="err-crimeDesc"></small><small class="counter" id="descCount">0 / 1000</small></div>
                     </div>
+
+                    <label class="checkbox-line">
+                        <input type="checkbox" id="anonymous" onchange="toggleAnonymous()">
+                        <span>Submit anonymously (hide my name and phone number)</span>
+                    </label>
+
+                    <div id="contactFields">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reporterName">Your Name *</label>
+                                <input type="text" id="reporterName" placeholder="Full name" autocomplete="name">
+                                <small class="field-error" id="err-reporterName"></small>
+                            </div>
+                            <div class="form-group">
+                                <label for="reporterPhone">Mobile Number *</label>
+                                <input type="tel" id="reporterPhone" placeholder="10-digit number" inputmode="numeric" maxlength="10" autocomplete="tel">
+                                <small class="field-error" id="err-reporterPhone"></small>
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-block">Submit Report Securely</button>
                 </form>
             </div>
-        </div>
+        </section>
 
-        <!-- TRACK CASE SECTION -->
-        <div id="track" class="page">
-            <div class="form-wrapper">
+        <!-- ================= TRACK ================= -->
+        <section id="page-track" class="page">
+            <div class="form-wrapper wide">
                 <div class="form-header">
+                    <span class="eyebrow">CASE STATUS</span>
                     <h2>Track Complaint Status</h2>
-                    <p>Enter your 6-digit Reference Hash ID.</p>
+                    <p>Enter your Reference ID (format <strong>CR-123456</strong>). Try the demo ID <button type="button" class="link-btn" onclick="useDemoId()">CR-849201</button>.</p>
                 </div>
-                <form onsubmit="return trackCase()">
+
+                <form id="trackForm" novalidate onsubmit="return trackCase(event)">
                     <div class="form-group">
-                        <label>Reference ID *</label>
-                        <input type="text" id="trackId" placeholder="e.g. CR-849201" required>
+                        <label for="trackId">Reference ID *</label>
+                        <div class="input-action">
+                            <input type="text" id="trackId" placeholder="e.g. CR-849201" autocomplete="off" maxlength="9">
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </div>
+                        <small class="field-error" id="err-trackId"></small>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-block">Search Case History</button>
                 </form>
 
-                <div id="trackResult" class="status-panel" style="display:none;">
-                    <h3>Status: <span style="color:#a7f3d0;">ACTIVE INVESTIGATION</span></h3>
-                    <p><strong>Case ID:</strong> <span id="resId">CR-849201</span></p>
-                    <p><strong>Handling Division:</strong> Regional Special Cyber Unit</p>
-                    <p><strong>Stage:</strong> Statement Verification & CCTV Review</p>
+                <div id="trackResult" style="display:none;"></div>
+
+                <div class="my-reports">
+                    <h3>Reports filed from this device</h3>
+                    <div id="myReports"></div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- ABOUT SECTION -->
-        <div id="about" class="page">
-            <div class="form-wrapper">
+        <!-- ================= SAFETY HUB ================= -->
+        <section id="page-safety" class="page">
+            <div class="page-title">
+                <span class="eyebrow">SAFETY HUB</span>
+                <h2>Stay Safe, Stay Informed</h2>
+                <p>Practical advice from cyber-cell and community policing teams. Search tips, tick off your safety checklist and test any suspicious situation.</p>
+            </div>
+
+            <div class="panel">
+                <div class="map-toolbar">
+                    <div class="chips" id="tipFilters" role="group" aria-label="Filter tips">
+                        <button type="button" class="chip active" data-filter="all" onclick="setTipFilter('all')">All</button>
+                        <button type="button" class="chip" data-filter="cyber" onclick="setTipFilter('cyber')">💳 Cyber</button>
+                        <button type="button" class="chip" data-filter="theft" onclick="setTipFilter('theft')">🔓 Theft</button>
+                        <button type="button" class="chip" data-filter="harassment" onclick="setTipFilter('harassment')">🚫 Personal Safety</button>
+                    </div>
+                    <input type="search" id="tipSearch" class="input-inline" placeholder="🔍 Search safety tips..." aria-label="Search tips" oninput="renderTips()">
+                </div>
+                <div class="card-grid cols-3" id="tipsGrid"></div>
+            </div>
+
+            <div class="two-col">
+                <div class="panel">
+                    <h3 class="panel-title">✅ My Safety Checklist</h3>
+                    <p class="panel-sub">Your progress is saved on this device.</p>
+                    <div class="progress"><div class="progress-fill" id="checkProgress"></div></div>
+                    <div class="progress-text" id="checkProgressText"></div>
+                    <div class="checklist" id="checklist"></div>
+                </div>
+
+                <div class="panel">
+                    <h3 class="panel-title">🧪 Scam Risk Checker</h3>
+                    <p class="panel-sub">Answer honestly about a message, call or offer you received.</p>
+                    <form id="scamForm" novalidate onsubmit="return evaluateScam(event)"></form>
+                    <div id="scamResult" style="display:none;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ABOUT ================= -->
+        <section id="page-about" class="page">
+            <div class="page-title">
+                <span class="eyebrow">ABOUT US</span>
                 <h2>About CrimePortal</h2>
-                <p style="margin-top:10px; color:#94a3b8; font-size:13px; line-height:1.6;">
-                    This platform connects citizens with national emergency units to enable rapid response, whistleblower anonymity, and digital tracking of civil security reports.
-                </p>
+                <p>This platform connects citizens with national emergency units to enable rapid response, whistleblower anonymity, and digital tracking of civil security reports.</p>
             </div>
-        </div>
 
-        <!-- CONTACT SECTION -->
-        <div id="contact" class="page">
-            <div class="form-wrapper">
+            <div class="card-grid cols-3">
+                <div class="feature-card"><span class="icon-box">🎯</span><h3>Our Mission</h3><p>To make reporting a crime as simple as sending a message, while guaranteeing that every complaint is recorded, routed to the right unit and followed to closure.</p></div>
+                <div class="feature-card"><span class="icon-box">👁️</span><h3>Our Vision</h3><p>A transparent, citizen-first policing ecosystem where no incident goes unreported out of fear, confusion or inconvenience.</p></div>
+                <div class="feature-card"><span class="icon-box">🤝</span><h3>Our Values</h3><p>Confidentiality, accountability, speed and respect for every person who comes forward.</p></div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">Portal at a glance</h3>
+                <div class="table-wrap">
+                    <table class="plain-table">
+                        <thead><tr><th>Module</th><th>What it does</th></tr></thead>
+                        <tbody>
+                            <tr><td>Report Incident</td><td>Validated complaint form with anonymous option; generates a unique Reference ID.</td></tr>
+                            <tr><td>Track Case</td><td>Looks up a Reference ID and shows its stage timeline and history.</td></tr>
+                            <tr><td>Live Map</td><td>Leaflet map with filterable, searchable incident pins and list.</td></tr>
+                            <tr><td>Safety Hub</td><td>Searchable tips, saved checklist and a scam risk calculator.</td></tr>
+                            <tr><td>Officer Dashboard</td><td>Captcha-protected login; officers update status, filter and export reports.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">Technology used</h3>
+                <div class="tech-row">
+                    <span class="tech">HTML5</span><span class="tech">CSS3 (Flexbox &amp; Grid)</span><span class="tech">JavaScript (ES6)</span><span class="tech">Leaflet.js maps</span><span class="tech">LocalStorage</span><span class="tech">Responsive design</span>
+                </div>
+                <p class="note">Academic project: incidents on the map are sample data. Reports you file are stored only in your own browser (LocalStorage) so the tracking and officer features can be demonstrated without a server.</p>
+            </div>
+        </section>
+
+        <!-- ================= CONTACT ================= -->
+        <section id="page-contact" class="page">
+            <div class="page-title">
+                <span class="eyebrow">CONTACT</span>
                 <h2>Contact Portal Support</h2>
-                <form onsubmit="alert('Message Sent!'); return false;" style="margin-top:15px;">
-                    <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Message</label>
-                        <textarea rows="3" required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block">Send Message</button>
-                </form>
+                <p>Questions about the portal, feedback or technical problems? Send us a message.</p>
             </div>
-        </div>
 
-    </div>
+            <div class="two-col">
+                <div class="panel">
+                    <h3 class="panel-title">Helplines</h3>
+                    <ul class="contact-list">
+                        <li><span class="icon-box sm">🚨</span><div><strong>Emergency</strong><a href="tel:112">112</a></div></li>
+                        <li><span class="icon-box sm">💻</span><div><strong>Cybercrime Helpline</strong><a href="tel:1930">1930</a></div></li>
+                        <li><span class="icon-box sm">👩</span><div><strong>Women Helpline</strong><a href="tel:1091">1091</a></div></li>
+                        <li><span class="icon-box sm">✉️</span><div><strong>Portal Support</strong><span>support@crimeportal.example</span></div></li>
+                        <li><span class="icon-box sm">🕒</span><div><strong>Support hours</strong><span>Mon&ndash;Sat, 9:00 AM &ndash; 6:00 PM</span></div></li>
+                    </ul>
+                </div>
 
-    <!-- MODAL AUTHENTICATION -->
-    <div id="authModal" class="modal">
-        <div class="modal-card">
-            <span class="modal-close" onclick="closeModal()">&times;</span>
-            <h2>Official Portal Authentication</h2>
-            <form onsubmit="return handleLogin(event)" style="margin-top:15px;">
-                <div class="form-group">
-                    <label>Officer Email Address</label>
-                    <input type="email" id="loginEmail" required>
+                <div class="form-wrapper flat">
+                    <div id="contactSuccess" class="success-inline" style="display:none;" role="status">✅ Message sent. We will get back to you shortly.</div>
+                    <form id="contactForm" novalidate onsubmit="return handleContactSubmit(event)">
+                        <div class="form-group">
+                            <label for="cName">Full Name *</label>
+                            <input type="text" id="cName" autocomplete="name">
+                            <small class="field-error" id="err-cName"></small>
+                        </div>
+                        <div class="form-group">
+                            <label for="cEmail">Email *</label>
+                            <input type="email" id="cEmail" autocomplete="email">
+                            <small class="field-error" id="err-cEmail"></small>
+                        </div>
+                        <div class="form-group">
+                            <label for="cSubject">Subject *</label>
+                            <select id="cSubject">
+                                <option value="">-- Select --</option>
+                                <option>Technical problem</option>
+                                <option>Feedback / suggestion</option>
+                                <option>Question about a report</option>
+                                <option>Other</option>
+                            </select>
+                            <small class="field-error" id="err-cSubject"></small>
+                        </div>
+                        <div class="form-group">
+                            <label for="cMessage">Message *</label>
+                            <textarea id="cMessage" rows="4"></textarea>
+                            <small class="field-error" id="err-cMessage"></small>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+                    </form>
                 </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" required>
-                </div>
-                <div class="form-group">
-                    <label>Security Verification Code (Captcha)</label>
-                    <div class="captcha-row">
-                        <span id="captchaCode" class="captcha-display">------</span>
-                        <button type="button" class="btn-refresh" onclick="generateCaptcha()">🔄</button>
+            </div>
+        </section>
+
+        <!-- ================= OFFICER DASHBOARD ================= -->
+        <section id="page-dashboard" class="page">
+            <div class="page-title">
+                <span class="eyebrow">RESTRICTED</span>
+                <h2>Officer Dashboard</h2>
+                <p>Review citizen reports filed on this device and update their investigation status.</p>
+            </div>
+
+            <div class="stat-cards" id="dashStats"></div>
+
+            <div class="panel">
+                <div class="map-toolbar">
+                    <div class="dash-filters">
+                        <select id="dashStatus" class="input-inline" aria-label="Filter by status" onchange="renderDashboard()">
+                            <option value="all">All statuses</option>
+                        </select>
+                        <input type="search" id="dashSearch" class="input-inline" placeholder="🔍 Search ID, location, text..." aria-label="Search reports" oninput="renderDashboard()">
                     </div>
-                    <input type="text" id="captchaInput" placeholder="Enter code above" required>
+                    <div class="dash-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="clearAllReports()">Clear all</button>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Authenticate & Log In</button>
+
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Ref ID</th><th>Category</th><th>Location</th><th>Severity</th><th>Filed</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody id="dashBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="dashEmpty" style="display:none;"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ================= LOGIN MODAL ================= -->
+    <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <div class="modal-card">
+            <button type="button" class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+            <span class="eyebrow">AUTHORIZED PERSONNEL</span>
+            <h2 id="authTitle">Official Portal Authentication</h2>
+            <p class="demo-hint">Demo login &mdash; Email: <code>officer@police.gov.in</code> Password: <code>Officer@123</code></p>
+
+            <form id="loginForm" novalidate onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginEmail">Officer Email Address</label>
+                    <input type="email" id="loginEmail" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="input-action">
+                        <input type="password" id="loginPassword" autocomplete="current-password">
+                        <button type="button" class="btn btn-secondary btn-sm" id="togglePw" onclick="togglePassword()">Show</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="captchaInput">Security Verification Code (Captcha)</label>
+                    <div class="captcha-row">
+                        <span id="captchaCode" class="captcha-display">-----</span>
+                        <button type="button" class="btn-refresh" onclick="generateCaptcha()" aria-label="Refresh captcha">🔄</button>
+                    </div>
+                    <input type="text" id="captchaInput" placeholder="Enter code above" autocomplete="off" maxlength="5">
+                </div>
+                <small class="field-error" id="loginError"></small>
+                <button type="submit" class="btn btn-primary btn-block">Authenticate &amp; Log In</button>
             </form>
         </div>
     </div>
 
-    <!-- FOOTER -->
+    <div id="toastHost" class="toast-host" aria-live="polite"></div>
+    <button type="button" id="backTop" class="back-top" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <!-- ================= FOOTER ================= -->
     <footer class="footer">
-        <p>&copy; 2026 National Crime Reporting Authority | All Rights Reserved</p>
+        <div class="footer-grid">
+            <div>
+                <strong>🛡️ Crime Reporting Portal</strong>
+                <p>Ministry of Home Affairs &mdash; secure citizen reporting and case tracking.</p>
+            </div>
+            <div>
+                <strong>Quick links</strong>
+                <a href="#report">Report Incident</a>
+                <a href="#track">Track Case</a>
+                <a href="#safety">Safety Hub</a>
+            </div>
+            <div>
+                <strong>Helplines</strong>
+                <a href="tel:112">Emergency 112</a>
+                <a href="tel:1930">Cybercrime 1930</a>
+                <a href="tel:1091">Women 1091</a>
+            </div>
+        </div>
+        <p class="footer-bottom">&copy; 2026 National Crime Reporting Authority | All Rights Reserved | Academic demonstration project</p>
     </footer>
 
-    <!-- Leaflet JS Map Engine -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
